@@ -1,0 +1,58 @@
+.TH PICOD 1
+.SH NAME
+picod \- Raspberry Pi UPS PIco contro daemon.
+.SH SYNOPSIS
+.B picod
+.RB [ -d ]
+.RB [ -n ]
+.RB [ -v ]
+.SH DESCRIPTION
+.B picod
+creates the pulse train necessary for the Raspberry Pi UPS PIco to work
+correctly. This device expects a pulse train on GPIO pin #22 to determine if the
+Raspberry Pi it is attached to is booted up. This then influences whether the
+firmware will charge the battery - without the pulse train, the device may
+appear to work correctly and will even switch over to the battery if power is
+lost, but the battery will not be charged, rendering the device quite useless
+quite fast.
+
+In addition to this, the daemon monitors pin #27, which is used by the PIco to
+indicate that the battery level is critical and the system needs to shut down.
+The PIco sets this pin to HIGH during normal operation, and LOW to indicate this
+condition. Upon receiving this signal, the daemon calls "shutdown -h now" to try
+and shut down gracefully. Power will be cut shortly after, so this is necessary.
+.SH OPTIONS
+.TP
+.B -d
+Fork to the background.
+.TP
+.B -n
+Do not monitor pin #27 for the FSSD trigger. Use this if you intend to monitor
+the battery state out of band and take appropriate action, OR if you set up your
+system in a way that makes it resilient to sudden power cuts.
+.TP
+.B -v
+Print the version and then exit.
+.SH BUGS
+The original manual incorrectly states that the pulse train has to be on pin #27
+and the FSSD signal is on pin #22. The Python script accompanying the firmware
+package on the other hand uses pin #22 for the pulse train and #27 for the FSSD
+signal, so this daemon follows suit.
+
+Also, the daemon terminates upon receiving the FSSD signal. This is in line with
+what the original Python script does, but it may be smarter to instead check if
+pin #27 is HIGH and control whether the pulse train is generated based on that,
+as it will be HIGH during normal operation.
+.SH "SEE ALSO"
+.TP
+.B https://github.com/ef-gy/rpi-ups-pico
+Source code repository for this daemon. Check for updates.
+.TP
+.B http://pimodules.com/
+The hardware manufacturer's website of the UPS PIco module.
+.TP
+.B http://pimodules.com/_pdf/_pico/UPS_PIco_BL_FSSD_V1.0.pdf
+Reference manual for the initial hardware revision of the UPS PIco module.
+.SH AUTHOR
+This daemon and manual page were written by Magnus Deininger
+.RB < magnus+picod@ef.gy >.

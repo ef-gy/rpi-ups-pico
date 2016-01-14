@@ -1,0 +1,5 @@
+NAME=picod
+VERSION=1
+INPUT=.
+RECURSIVE=YES
+OUTPUT_DIRECTORY=documentation/
