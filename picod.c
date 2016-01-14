@@ -133,14 +133,14 @@ static int get(int gpio) {
   if (snprintf(fn, MAX_GPIO_FN, "/sys/class/gpio/gpio%i/value", gpio) < 0) {
     return -1;
   } else {
-    int fd = open(fn, O_WRONLY);
+    int fd = open(fn, O_RDONLY);
 
     if (fd) {
       char buf[MAX_BUFFER];
       int r = read(fd, buf, MAX_BUFFER);
 
       if (r < 1) {
-        rv = -1;
+        rv = -2;
       } else {
         rv = (buf[0] == '1');
       }
