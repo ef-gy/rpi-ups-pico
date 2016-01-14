@@ -25,9 +25,12 @@ Check out the sources, then compile manually:
 
     $ make picod
 
-Copy the resulting binary to a convenient location, e.g. /sbin. Then make sure
-it gets executed upon boot. To do so, you could add a line like the following to
-your /etc/rc.local:
+Copy the resulting binary to a convenient location, e.g. /sbin:
+
+    $ sudo install picod /sbin
+
+Then make sure it gets executed upon boot. To do so, you could add a line like
+the following to your /etc/rc.local:
 
     /sbin/picod -d
 
