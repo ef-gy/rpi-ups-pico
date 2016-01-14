@@ -30,3 +30,7 @@
 
 # Debug files
 *.dSYM/
+
+# output files
+picod
+build-*
