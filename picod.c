@@ -1,11 +1,23 @@
 /**\file
  * \brief UPS PIco control daemon.
  *
+ * The PIco UPS for the Raspberr Pi by pimodules.com requires some userspace
+ * help to function correctly. The vendor provides a Python - picofssd.py - to
+ * do so, but it seems strange to force users to use Python for an embedded
+ * device's UPS.
+ *
+ * This programme replaces the aforementioned Python script. It's a lot smaller
+ * than the original, nicely compiled and adds the ability to spawn into a
+ * daemon proper, so you don't have to screw around with nohup and & in your
+ * rc.local script.
+ *
  * \copyright
  * This programme is released as open source, under the terms of an MIT/X style
  * licence. See the accompanying LICENSE file for details.
  *
  * \see Source Code Repository: https://github.com/ef-gy/rpi-ups-pico
+ * \see Hardware: http://pimodules.com/_pdf/_pico/UPS_PIco_BL_FSSD_V1.0.pdf
+ * \see Hardware Vendor: http://pimodules.com/
  * \see Licence Terms: https://github.com/ef-gy/rpi-ups-pico/blob/master/LICENSE
  */
 
@@ -29,6 +41,22 @@
 #define MAX_GPIO_FN 256
 #define MAX_BUFFER 32
 
+/**\brief Daemon version
+ *
+ * The version number of this daemon. Will be increased around release time.
+ */
+static const int version = 1;
+
+/**\brief Export GPIO pin
+ *
+ * Linux's sysfs interface for GPIO pins requires setting up the pins that you
+ * intend to use by first "exporting" them, which creates the pin's control
+ * files in sysfs. This function tells the kernel to do so.
+ *
+ * \param[in] gpio The pin to export.
+ *
+ * \returns 0 on success, negative numbers on (partial) failures.
+ */
 static int export(int gpio) {
   int fd;
   char bf[MAX_BUFFER];
@@ -56,6 +84,15 @@ static int export(int gpio) {
   return rv;
 }
 
+/**\brief Set a GPIO pin's I/O direction.
+ *
+ * Set the I/O direction of a GPIO pin that has previously been exported.
+ *
+ * \param[in] gpio   The pin to set up.
+ * \param[in] output Nonzero for output, 0 for input.
+ *
+ * \returns 0 on success, negative numbers on (partial) failures.
+ */
 static int direction(int gpio, char output) {
   int fd;
   char fn[MAX_GPIO_FN];
@@ -87,6 +124,15 @@ static int direction(int gpio, char output) {
   return rv;
 }
 
+/**\brief Export GPIO pin and set I/O direction.
+ *
+ * Calls export() and then direction() to set up a GPIO pin.
+ *
+ * \param[in] gpio   The pin to set up.
+ * \param[in] output Nonzero for output, 0 for input.
+ *
+ * \returns 0 on success, negative numbers on (partial) failures.
+ */
 static int setup(int gpio, char output) {
   int rv = 0;
 
@@ -103,6 +149,16 @@ static int setup(int gpio, char output) {
   return 0;
 }
 
+/**\brief Set a GPIO pin's state
+ *
+ * Pins can either be LOW or HIGH. This function sets a pin to the given target
+ * state. The pin must previously have been set up as an output pin.
+ *
+ * \param[in] gpio   The pin to set.
+ * \param[in] statre The state to set the pin to.
+ *
+ * \returns 0 on success, negative numbers on (partial) failures.
+ */
 static int set(int gpio, char state) {
   char fn[MAX_GPIO_FN];
   int rv = 0;
@@ -126,6 +182,16 @@ static int set(int gpio, char state) {
   return rv;
 }
 
+/**\brief Get the value of a GPIO pin.
+ *
+ * Queries a GPIO pin's value. The pin must have been set up to be an input pin
+ * beforehand.
+ *
+ * \param[in] gpio The pin to query.
+ *
+ * \returns 1 if the pin is HIGH, 0 if the pin is LOW, negative numbers on
+ *          (partial) failures.
+ */
 static int get(int gpio) {
   char fn[MAX_GPIO_FN];
   int rv = 0;
@@ -154,14 +220,29 @@ static int get(int gpio) {
   return rv;
 }
 
-static int pulse(int gpio, int period, int duration) {
+/**\brief Create a pulse on a GPIO pin.
+ *
+ * This function creates a pulse on a GPIO pin that has previously been set up
+ * to be an output pin. The pin will be set to HIGH for the given duration, then
+ * set to LOW for the remainder of the period.
+ *
+ * \note The duration must be smaller than the period.
+ *
+ * \param[in] gpio     The pin to send the pulse to.
+ * \param[in] period   The amount of time for the full pulse; in usec.
+ * \param[in] duration The amount of time to set the pin to HIGH; in usec.
+ *
+ * \returns 0 on success, negative numbers on (partial) failures.
+ */
+static int pulse(int gpio, unsigned int period, unsigned int duration) {
   if (set(gpio, 1) != 0) {
     return -1;
   }
 
   (void)usleep(duration);
   /* we ignore usleep()'s return value, because the only error would be to be
-     interrupted by a signal, which is OK. */
+   * interrupted by a signal, which is OK as the PIco does not seem to be that
+   * particular about the exact shape of the pulse train. */
 
   if (set(gpio, 0) != 0) {
     return -2;
@@ -172,12 +253,37 @@ static int pulse(int gpio, int period, int duration) {
   return 0;
 }
 
+/**\brief picod's main function.
+ *
+ * Parses some command line options and then creates a pulse train on pin #22,
+ * which is what the PIco UPS requires for it to figure out that the Raspberry
+ * Pi it's connected to is running.
+ *
+ * The only exit condition for the daemon is if pin #27 is set to LOW, which
+ * will trigger what the hardware vendor dubbed a "File Safe Shut Down." I.e. a
+ * good old "shutdown -h now."
+ *
+ * Because of this, and the whole thing about the GPIO pins, this daemon needs
+ * to be run as root and can't drop privileges. If you were to set things up
+ * such that the GPIO pin #22 is available to ordinary users, and you used -n to
+ * disable the FSSD function, you could run it as non-root.
+ *
+ * * -n disables the FSSD test, if you don't care about this feature.
+ * * -d launches the programme as a daemon. Pin setup is performed before the
+ *   daemon() call, which allows error reporting for that.
+ * * -v prints the version of the daemon and then exits.
+ *
+ * \param[in] argc Argument count.
+ * \param[in] argv Argument vecotr.
+ *
+ * \returns 0 on success, negative numbers for programme setup errors.
+ */
 int main(int argc, char **argv) {
   char daemonise = 0;
   char fssd = 1;
   int opt;
 
-  while ((opt = getopt(argc, argv, "dn")) != -1) {
+  while ((opt = getopt(argc, argv, "dnv")) != -1) {
     switch (opt) {
     case 'd':
       daemonise = 1;
@@ -185,8 +291,11 @@ int main(int argc, char **argv) {
     case 'n':
       fssd = 0;
       break;
+    case 'v':
+      printf("picod/%i\n", version);
+      return 0;
     default:
-      printf("Usage: %s [-d]\n", argv[0]);
+      printf("Usage: %s [-d] [-n] [-v]\n", argv[0]);
       return -3;
     }
   }
