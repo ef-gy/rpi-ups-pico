@@ -1,1 +1,1 @@
-CFLAGS+=-Wall -pedantic
+CFLAGS+=-Wall -pedantic -Os

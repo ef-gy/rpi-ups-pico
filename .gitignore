@@ -33,5 +33,9 @@
 
 # output files
 picod
+pico-i2cd
 build-*
 documentation
+
+# swap files
+*.swp
