@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
   }
 
   if (input_loop) {
-    int device = open(uinput, O_WRONLY | O_NONBLOCK);
+    int device = open(uinput, O_WRONLY | O_NONBLOCK), i;
     struct uinput_user_dev userdev = {
         "Raspberry Pi PIco UPS", {BUS_I2C, 0x0000, 0x0000, version}, 0};
     struct input_event event = {{0}, EV_KEY, 0};
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
       return -5;
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
       if (ioctl(device, UI_SET_KEYBIT, code[i]) < 0) {
         fprintf(stderr, "Could not declare key code: ERRNO=%d.\n", errno);
         return -5;
@@ -226,7 +226,7 @@ int main(int argc, char **argv) {
     }
 
     while (1) {
-      for (int i = 0; i < 3; i++) {
+      for (i = 0; i < 3; i++) {
         int scan = getKey(&i2c, i);
         if (release[i]) {
           if (scan == 0) {
