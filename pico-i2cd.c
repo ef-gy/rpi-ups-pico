@@ -18,6 +18,7 @@
  * licence. See the accompanying LICENSE file for details.
  *
  * \see Source Code Repository: https://github.com/ef-gy/rpi-ups-pico
+ * \see Documentation: https://ef.gy/documentation/rpi-ups-pico
  * \see Hardware: http://pimodules.com/_pdf/_pico/UPS_PIco_BL_FSSD_V1.0.pdf
  * \see Hardware Vendor: http://pimodules.com/
  * \see Licence Terms: https://github.com/ef-gy/rpi-ups-pico/blob/master/LICENSE
@@ -302,13 +303,13 @@ static long getTemperature(struct i2c *i2c, int sensor) {
  * programme will most likely need to be run as root, as /dev/uinput is usually
  * only writable by the root user.
  *
- * * -a <address> selects the I2C device to use. The default is /dev/i2c-1,
+ * * -a [address] selects the I2C device to use. The default is /dev/i2c-1,
  *   which is the typical I2C device file on Raspberry Pi 2 and B+.
  * * -d launches the programme as a daemon. Setup is performed before the
  *   daemon() call, which allows error reporting for that.
  * * -i Do not run the input device loop. The default is to run it.
  * * -s Dump current PIco state. The default is not to do so.
- * * -u <uinput> selects the uinput device file. /dev/uinput seems to be used by
+ * * -u [uinput] selects the uinput device file. /dev/uinput seems to be used by
  *   Debian, even though the canonical location is /dev/input/uinput.
  * * -v prints the version of the daemon and then exits.
  *

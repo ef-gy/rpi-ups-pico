@@ -16,6 +16,7 @@
  * licence. See the accompanying LICENSE file for details.
  *
  * \see Source Code Repository: https://github.com/ef-gy/rpi-ups-pico
+ * \see Documentation: https://ef.gy/documentation/rpi-ups-pico
  * \see Hardware: http://pimodules.com/_pdf/_pico/UPS_PIco_BL_FSSD_V1.0.pdf
  * \see Hardware Vendor: http://pimodules.com/
  * \see Licence Terms: https://github.com/ef-gy/rpi-ups-pico/blob/master/LICENSE
@@ -38,7 +39,16 @@
 /* for errno */
 #include <errno.h>
 
+/**\brief Maximum length of GPIO file name.
+ *
+ * This is the maximum length of a GPIO file that we're willing to support.
+ */
 #define MAX_GPIO_FN 256
+
+/**\brief Internal buffer size.
+ *
+ * Size of internal buffers used throughout the code.
+ */
 #define MAX_BUFFER 32
 
 /**\brief Daemon version
@@ -154,8 +164,8 @@ static int setup(int gpio, char output) {
  * Pins can either be LOW or HIGH. This function sets a pin to the given target
  * state. The pin must previously have been set up as an output pin.
  *
- * \param[in] gpio   The pin to set.
- * \param[in] statre The state to set the pin to.
+ * \param[in] gpio  The pin to set.
+ * \param[in] state The state to set the pin to.
  *
  * \returns 0 on success, negative numbers on (partial) failures.
  */
