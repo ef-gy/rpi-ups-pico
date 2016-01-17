@@ -1,0 +1,63 @@
+.TH PICO-I2CD 1
+.SH NAME
+pico-i2cd \- Raspberry Pi UPS PIco input driver.
+.SH SYNOPSIS
+.B picod
+.RB [ -a
+.IR adaptor ]
+.RB [ -d ]
+.RB [ -i ]
+.RB [ -s ]
+.RB [ -u
+.IR uinput ]
+.RB [ -v ]
+.SH DESCRIPTION
+.B pico-i2cd
+Monitors the PIco UPS' I2C interface for changes to the state of the hardware
+buttons that are located on the top of the device. It then translates that
+status into input events for a virtual input device that it creates. These can
+then further be used for controlling the Pi using such programmes as
+.BR thd .
+
+In addition to this, the programme can be used to dump the state of the PIco's
+I2C registers, for use in scripts or to get a sense of whether the hardware is
+working correctly.
+.SH OPTIONS
+.TP
+.BI -a adaptor
+Set the path to the I2C device file to talk to. The default is /dev/i2c-1, which
+is the typical location of the PIco I2C interface on the Raspberry Pi 2 and B+.
+.TP
+.B -d
+Fork to the background.
+.TP
+.B -i
+Do not run the input device loop. Useful in combination with
+.B -s
+if you only want to dump the status.
+.TP
+.B -s
+Dump the status of the PIco's I2C registers, e.g. firmware version, battery mode
+and voltages. The format is compatible with Prometheus' /metrics format.
+.TP
+.BI -u uinput
+Set the path to the
+.B uinput
+device file. Defaults to /dev/uinput, which is used on Debian, although the
+canonical default seems to be /dev/input/uinput.
+.TP
+.B -v
+Print the version and then exit.
+.SH "SEE ALSO"
+.TP
+.B https://github.com/ef-gy/rpi-ups-pico
+Source code repository for this daemon. Check for updates.
+.TP
+.B http://pimodules.com/
+The hardware manufacturer's website of the UPS PIco module.
+.TP
+.B http://pimodules.com/_pdf/_pico/UPS_PIco_BL_FSSD_V1.0.pdf
+Reference manual for the initial hardware revision of the UPS PIco module.
+.SH AUTHOR
+This daemon and manual page were written by Magnus Deininger
+.RB < magnus+picod@ef.gy >.
