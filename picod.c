@@ -1,7 +1,7 @@
 /**\file
  * \brief UPS PIco control daemon.
  *
- * The PIco UPS for the Raspberr Pi by pimodules.com requires some userspace
+ * The PIco UPS for the Raspberry Pi by pimodules.com requires some userspace
  * help to function correctly. The vendor provides a Python - picofssd.py - to
  * do so, but it seems strange to force users to use Python for an embedded
  * device's UPS.
