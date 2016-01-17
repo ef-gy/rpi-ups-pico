@@ -34,9 +34,6 @@
 /* for snprintf() */
 #include <stdio.h>
 
-/* for system() */
-#include <stdlib.h>
-
 /* for errno */
 #include <errno.h>
 
