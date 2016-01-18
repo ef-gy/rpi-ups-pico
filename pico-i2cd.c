@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
     while (1) {
       for (i = 0; i < 3; i++) {
         int scan = getKey(&i2c, i);
-        if (release[i]) {
+        if (release[i] > 0) {
           if (scan == 0) {
             event.code = code[i];
             event.value = 0;
@@ -433,9 +433,24 @@ int main(int argc, char **argv) {
               synchronise = 1;
             }
           } else {
-            /* I supose this could happen if the button is still being pressed?
-               let's just reset it to 0 again... */
+            /* This is what happens when the button is still being pressed, so
+               since we saw that again we'll just reset it to 0 again. */
             resetKey(&i2c, i);
+
+            if (release[i] == 4) {
+              /* we've detected a long press (of several scan cycles) */
+              event.code = code[i];
+              event.value = 2;
+              if (write(device, &event, sizeof(event)) == sizeof(event)) {
+                /* event has been sent successfully */
+                synchronise = 1;
+              }
+            }
+
+            /* keep counting up a few times to detect a long press. */
+            if (release[i] < 5) {
+              release[i]++;
+            }
           }
         } else {
           if (scan > 0) {
