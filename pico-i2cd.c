@@ -281,7 +281,7 @@ static long resetKey(struct i2c *i2c, int key) {
  * \returns Negative number on failure, or the readout as degrees Celsius.
  */
 static long getTemperature(struct i2c *i2c, int sensor) {
-  return getByte(i2c, 0x69, 0x0c + sensor);
+  return getBCD(getByte(i2c, 0x69, 0x0c + sensor));
 }
 
 /**\brief PIco I2C driver main function
