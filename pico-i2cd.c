@@ -52,7 +52,7 @@
  *
  * The version number of this daemon. Will be increased around release time.
  */
-static const int version = 1;
+static const int version = 2;
 
 /**\brief I2C state
  *
@@ -74,25 +74,23 @@ struct i2c {
   int addr;
 };
 
-/**\brief Decode PIco floats
+/**\brief Decode BCD word values
  *
- * The PIco encodes floats (e.g. voltages) as fixed-point decimal word, with the
- * higher-value byte representing the part before the decimal point and the
- * lower-value byte representing the part after the decimal point.
+ * The PIco exports a lot of data encoded in binary-coded decimal values. For
+ * reference, this basically means that every 4-bit nibble is holding a single
+ * digit, encoded in regular binary form.
  *
- * I'm not entirely sure about the range on the latter part, the manual doesn't
- * seem to say. The assumption I saw in scripts seems to have been that the
- * range is 0-100.
+ * High/low byte order is presumably kept, though this is not documented.
  *
- * \param[in] w The word to convert to a float.
+ * \param[in] w The word to parse.
  *
- * \returns A floating point number, positive if successful and negative if not.
+ * \returns The decoded value.
  */
-static float getFloat(long w) {
-  float v1 = w & 0xff;
-  float v2 = (w >> 8) & 0xff;
-
-  return v2 + v1 / 100.;
+static long getBCD(long w) {
+  return ((w >> 0x0) & 0xf)
+       + ((w >> 0x4) & 0xf) * 10
+       + ((w >> 0x8) & 0xf) * 100
+       + ((w >> 0xc) & 0xf) * 1000;
 }
 
 /**\brief Select I2C address
@@ -194,11 +192,10 @@ static long setByte(struct i2c *i2c, int addr, int reg, int value) {
  *
  * \param[out] i2c The I2C state struct.
  *
- * \returns A positive float of the voltage, if it could be read. A negative
- *     number on error.
+ * \returns The voltage, in centi-volts. Negative values on error.
  */
-static float getBatteryVoltage(struct i2c *i2c) {
-  return getFloat(getWord(i2c, 0x69, 0x01));
+static long getBatteryVoltage(struct i2c *i2c) {
+  return getBCD(getWord(i2c, 0x69, 0x01));
 }
 
 /**\brief Get Raspberry Pi 5V pin voltage.
@@ -207,11 +204,10 @@ static float getBatteryVoltage(struct i2c *i2c) {
  *
  * \param[out] i2c The I2C state struct.
  *
- * \returns A positive float of the voltage, if it could be read. A negative
- *     number on error.
+ * \returns The voltage, in centi-volts. Negative values on error.
  */
-static float getHostVoltage(struct i2c *i2c) {
-  return getFloat(getWord(i2c, 0x69, 0x03));
+static long getHostVoltage(struct i2c *i2c) {
+  return getBCD(getWord(i2c, 0x69, 0x03));
 }
 
 /**\brief Read out PIco firmware version.
@@ -364,8 +360,8 @@ int main(int argc, char **argv) {
   if (status) {
     printf("pico_firmware_version %ld\n", getVersion(&i2c));
     printf("pico_mode %ld\n", getMode(&i2c));
-    printf("pico_battery_volts %f\n", getBatteryVoltage(&i2c));
-    printf("pico_host_volts %f\n", getHostVoltage(&i2c));
+    printf("pico_battery_centivolts %ld\n", getBatteryVoltage(&i2c));
+    printf("pico_host_centivolts %ld\n", getHostVoltage(&i2c));
     printf("pico_temperature_1_celsius_degrees %ld\n", getTemperature(&i2c, 0));
     printf("pico_temperature_2_celsius_degrees %ld\n", getTemperature(&i2c, 1));
   }
