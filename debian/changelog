@@ -1,0 +1,5 @@
+rpi-ups-pico (3-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Magnus Deininger <magnus@ef.gy>  Sun, 06 Mar 2016 14:09:19 -0500

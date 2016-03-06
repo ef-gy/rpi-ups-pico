@@ -1,0 +1,15 @@
+Source: rpi-ups-pico
+Section: unknown
+Priority: optional
+Maintainer: Magnus Deininger <magnus@ef.gy>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: git://anonscm.debian.org/collab-maint/rpi-ups-pico.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/rpi-ups-pico.git
+
+Package: rpi-ups-pico
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
