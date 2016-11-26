@@ -16,7 +16,6 @@ fi
 # Author: Magnus Deininger <magnus@ef.gy>
 
 NAME="rpi-ups-pico"
-DAEMON=/sbin/picod
-DAEMONOPTS="-d"
+DAEMON="/sbin/picod -d"
 
 DESC="Raspberry Pi PIco UPS control daemon."
