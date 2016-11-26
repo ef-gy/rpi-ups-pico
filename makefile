@@ -13,6 +13,8 @@ doxygen:: doxyfile
 	doxygen $<
 
 install: all
+	mkdir -p $(SBINDIR) || true
+	mkdir -p $(MANDIR)/man1 || true
 	install picod $(SBINDIR)
 	install pico-i2cd $(SBINDIR)
 	install picod.1 $(MANDIR)/man1
