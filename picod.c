@@ -2,9 +2,9 @@
  * \brief UPS PIco control daemon.
  *
  * The PIco UPS for the Raspberry Pi by pimodules.com requires some userspace
- * help to function correctly. The vendor provides a Python - picofssd.py - to
- * do so, but it seems strange to force users to use Python for an embedded
- * device's UPS.
+ * help to function correctly. The vendor provides a Python script -
+ * picofssd.py - to do so, but it seems strange to force users to use Python
+ * for an embedded device's UPS.
  *
  * This programme replaces the aforementioned Python script. It's a lot smaller
  * than the original, nicely compiled and adds the ability to spawn into a
@@ -55,7 +55,7 @@
  *
  * The version number of this daemon. Will be increased around release time.
  */
-static const int version = 1;
+static const int version = 2;
 
 /**\brief Export GPIO pin
  *
@@ -291,6 +291,8 @@ static int pulse(int gpio, unsigned int period, unsigned int duration) {
 int main(int argc, char **argv) {
   char daemonise = 0;
   char fssd = 1;
+  char initialPulse = 1;
+  char fssdWasHigh = 0;
   int opt;
 
   while ((opt = getopt(argc, argv, "dnv")) != -1) {
@@ -334,11 +336,31 @@ int main(int argc, char **argv) {
 
   /* create a pulse train with the same modulation as the PIco's FSSD script. */
   while (1) {
-    (void)pulse(22, 500000, 250000);
-    /* note how we don't use the return value here, because we'd really just
-     * send another pulse. */
+    int fssdSignal = (fssd == 1) ? get(27) : 1;
+    /* if processing the FSSD signal is disabled, assume it's HIGH so as not to
+     * trigger a shutdown, ever. */
 
-    if (get(27) == 0) {
+    fssdWasHigh = (fssdSignal == 1) ? 1 : fssdWasHigh;
+    /* keep track of whether we've ever seen the FSSD signal in a HIGH state; if
+     * we haven't, then we assume the PIco has not been installed. */
+
+    if ((initialPulse == 1) || (fssdWasHigh == 1)) {
+      /* only send the pulse train if the FSSD signal scanned HIGH recently;
+       * this means that the pulse train is not sent if shutdown has been
+       * initiated due to a low battery state, or if the PIco has not been
+       * installed. */
+
+      (void)pulse(22, 500000, 250000);
+      /* note how we don't use the return value here, because we'd really just
+       * send another pulse. */
+
+      initialPulse = 0;
+      /* we send one initial pulse at boot up, just in case the PIco firmware
+       * would only set pin #27 to HIGH upon receiving the initial pulse; not
+       * sure if this is needed, but it shouldn't hurt, either. */
+    }
+
+    if ((fssdWasHigh == 1) && (fssdSignal == 0)) {
       /* we ignore the error condition on the get() because the only thing to do
        * in that case is to re-issue that, and we'll do that in 500ms. */
 
@@ -346,7 +368,10 @@ int main(int argc, char **argv) {
       /* there's nothing else to do here - regardless of whether the call fails.
        * so we bail after this. */
 
-      break;
+      fssdWasHigh = 0;
+      /* reset the FSSD HIGH sensing; the daemon will keep running and reinstate
+       * the pulse train if power is restored, though we can't cancel the
+       * shutdown so something external would have to do that. */
     }
   }
 

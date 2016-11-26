@@ -30,6 +30,9 @@ Fork to the background.
 Do not monitor pin #27 for the FSSD trigger. Use this if you intend to monitor
 the battery state out of band and take appropriate action, OR if you set up your
 system in a way that makes it resilient to sudden power cuts.
+
+Without this flag, the pulse train to pin #22 will only be sent as long as pin
+#27 stays HIGH.
 .TP
 .B -v
 Print the version and then exit.
@@ -39,10 +42,11 @@ and the FSSD signal is on pin #22. The Python script accompanying the firmware
 package on the other hand uses pin #22 for the pulse train and #27 for the FSSD
 signal, so this daemon follows suit.
 
-Also, the daemon terminates upon receiving the FSSD signal. This is in line with
-what the original Python script does, but it may be smarter to instead check if
-pin #27 is HIGH and control whether the pulse train is generated based on that,
-as it will be HIGH during normal operation.
+Unlike the upstream Python script, this daemon does not exit upon receiving the
+FSSD signal; instead it keeps running and will resume sending the pulse train if
+power were restored and the FSSD signal went back to HIGH. It can't cancel the
+shutdown, however, so that will most likely happen and then kill this daemon
+anyway.
 .SH "SEE ALSO"
 .TP
 .B https://github.com/ef-gy/rpi-ups-pico
