@@ -16,6 +16,38 @@ fi
 # Author: Magnus Deininger <magnus@ef.gy>
 
 NAME="rpi-ups-pico"
-DAEMON="/sbin/picod -d"
+PIDFILE_PICOD=/var/run/$NAME.picod.pid
+PIDFILE_PICO_I2CD=/var/run/$NAME.pico-i2cd.pid
+
+DAEMON_PICOD=/sbin/picod
+DAEMON_PICO_I2CD=/sbin/pico-i2cd
 
 DESC="Raspberry Pi PIco UPS control daemon."
+
+case "$1" in
+  start)
+    echo -n "Starting daemon: $NAME"
+    start-stop-daemon --start --quiet --background --pidfile $PIDFILE_PICOD --exec $DAEMON_PICOD
+    start-stop-daemon --start --quiet --background --pidfile $PIDFILE_PICO_I2CD --exec $DAEMON_PICO_I2CD
+    echo "."
+    ;;
+  stop)
+    echo -n "Stopping daemon: $NAME"
+    start-stop-daemon --stop --quiet --pidfile $PIDFILE_PICO_I2CD --exec $DAEMON_PICO_I2CD
+    start-stop-daemon --stop --quiet --pidfile $PIDFILE_PICOD --exec $DAEMON_PICOD
+    echo "."
+    ;;
+  restart)
+    echo -n "Restarting daemon: $NAME"
+    start-stop-daemon --stop --quiet --pidfile $PIDFILE_PICO_I2CD --exec $DAEMON_PICO_I2CD
+    start-stop-daemon --stop --quiet --pidfile $PIDFILE_PICOD --exec $DAEMON_PICOD
+    start-stop-daemon --start --quiet --background --pidfile $PIDFILE_PICOD --exec $DAEMON_PICOD
+    start-stop-daemon --start --quiet --background --pidfile $PIDFILE_PICO_I2CD --exec $DAEMON_PICO_I2CD
+    echo "."
+    ;;
+  *)
+    echo "Usage: $1 {start|stop|restart}"
+    exit 1
+esac
+
+exit 0
