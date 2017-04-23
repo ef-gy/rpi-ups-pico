@@ -30,6 +30,10 @@ format that is roughly compatible with the metrics format used by Prometheus.
 
 ## Installation
 
+Make sure you have the full build environment on your platform, and the correct
+i2c headers. In particular, if building on a Debian-ish/Raspbian system you'll
+need `make`, a C compiler and the `libi2c-dev` package.
+
 Check out the sources, then compile manually:
 
     $ make
