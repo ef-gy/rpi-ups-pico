@@ -55,7 +55,14 @@
  *
  * The version number of this daemon. Will be increased around release time.
  */
-static const int version = 2;
+static const int version = 3;
+
+/**\brief Maximum number of retries.
+ *
+ * Used during GPIO pin setup, to prevent random setup delays from causing
+ * initialisation to fail.
+ */
+static const int maxRetries = 8;
 
 /**\brief Export GPIO pin
  *
@@ -145,13 +152,23 @@ static int direction(int gpio, char output) {
  */
 static int setup(int gpio, char output) {
   int rv = 0;
+  int retries = 0;
 
   rv = export(gpio);
   if (rv < 0) {
     return rv;
   }
 
-  rv = direction(gpio, output);
+  do {
+    if (retries > 0) {
+      /* setting the pin IO direction may fail for a few milliseconds after
+       * exporting the pin, so retry this step a few times. Each time we try
+       * this, we wait a bit longer. */
+      usleep(retries * retries * 1000);
+    }
+    rv = direction(gpio, output);
+  } while ((rv < 0) && (retries++ < maxRetries));
+
   if (rv < 0) {
     return rv;
   }
